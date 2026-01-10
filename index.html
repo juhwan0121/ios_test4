@@ -422,6 +422,10 @@
               <div class="icon"><img src="camera.png" alt="camera"></div>
               <div class="label">camera</div>
             </div>
+            <div class="app" data-app="KREAM" data-url="https://www.kream.co.kr">
+              <div class="icon"><img src="KREAM.png" alt="KREAM"></div>
+              <div class="label">KREAM</div>
+            </div>
           </div>
         </div>
 
@@ -568,12 +572,24 @@
       sheetBody.innerHTML = "";
     }
 
-    // 카메라만 작동
     document.querySelectorAll('.app').forEach(el=>{
       el.addEventListener('click', ()=>{
         const name = el.getAttribute('data-app');
-        if (name !== "카메라") return;
-        openCamera();
+
+        // 1) 카메라만 기존처럼 열기
+        if (name === "카메라") {
+          openCamera();
+          return;
+        }
+
+        // 2) data-url 있으면 그 링크로 이동 (KREAM 포함)
+        const url = el.getAttribute('data-url');
+        if (url) {
+         window.location.href = url;   // 같은 탭에서 이동
+          return;
+        }
+
+        // 3) 나머지 앱은 아무것도 안 함
       });
     });
 
@@ -584,4 +600,5 @@
   </script>
 </body>
 </html>
+
 
