@@ -67,6 +67,23 @@
         radial-gradient(700px 650px at 80% 30%, rgba(255,255,255,.06), transparent 52%),
         linear-gradient(160deg, #0a0f1c, #111a33);
     }
+    /* ✅ 배경화면: 절대 안 잘리게(비율 유지, contain) */
+  .wallpaper{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;   /* 핵심: 안 잘림 */
+    object-position: center;
+    background: #000;      /* 여백 생길 때 검은색 */
+    z-index: 0;
+  }
+
+   /* 기존 요소들이 배경 위에 올라오게 */
+  .safe, .overlay, .home-indicator, .notch{
+    position: relative;
+    z-index: 1;
+  }
 
     /* ✅ 항상 보이는 상단 검은 줄(노치/아일랜드) */
     .notch{
@@ -372,6 +389,7 @@
   <div class="stage">
     <div class="phone">
       <div class="screen" id="screen">
+      <img class="wallpaper" src="wallpaper.jpg" alt="wallpaper">
 
         <!-- ✅ 어떤 상황에서도 안 없어지는 상단 검은 줄 -->
         <div class="notch" aria-hidden="true"></div>
@@ -600,6 +618,7 @@
   </script>
 </body>
 </html>
+
 
 
 
