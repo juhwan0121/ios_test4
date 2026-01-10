@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0b0f1a" />
+  <title>iPhone-like Web App</title>
+
+  <style>
+    :root{
+      /* ✅ 800x480 기준 */
+      --phoneH: min(480px, calc(100vh - 20px));
+      --s: clamp(0.68, calc(var(--phoneH) / 650px), 1);
+
+      --r: calc(34px * var(--s));
+      --iconR: calc(18px * var(--s));
+      --shadow: 0 calc(18px * var(--s)) calc(50px * var(--s)) rgba(0,0,0,.45);
+
+      --bg1:#0b0f1a;
+      --bg2:#141b33;
+      --glass: rgba(255,255,255,.14);
+      --text: rgba(255,255,255,.95);
+      --sub: rgba(255,255,255,.72);
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+                   "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+      color: var(--text);
+      background: radial-gradient(1200px 700px at 20% 10%, #2d4cff33, transparent 55%),
+                  radial-gradient(900px 600px at 90% 35%, #ff3a6a22, transparent 52%),
+                  linear-gradient(160deg, var(--bg1), var(--bg2));
+      overflow: hidden;
+    }
+
+    .stage{
+      height: 100%;
+      display: grid;
+      place-items: center;
+      padding: calc(10px * var(--s));
+      box-sizing: border-box;
+    }
+
+    .phone{
+      height: var(--phoneH);
+      width: auto;
+      aspect-ratio: 9 / 19.5;
+      border-radius: calc(var(--r) + calc(10px * var(--s)));
+      background: rgba(0,0,0,.35);
+      box-shadow: var(--shadow);
+      padding: calc(10px * var(--s));
+      position: relative;
+    }
+
+    .screen{
+      height: 100%;
+      border-radius: var(--r);
+      overflow: hidden;
+      position: relative;
+      background:
+        radial-gradient(900px 700px at 30% 0%, rgba(255,255,255,.08), transparent 55%),
+        radial-gradient(700px 650px at 80% 30%, rgba(255,255,255,.06), transparent 52%),
+        linear-gradient(160deg, #0a0f1c, #111a33);
+    }
+
+    /* ✅ 항상 보이는 상단 검은 줄(노치/아일랜드) */
+    .notch{
+      position: absolute;
+      top: calc(6px * var(--s)); /* 화면 안쪽에서 살짝 내려오게 */
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(150px * var(--s));
+      height: calc(30px * var(--s));
+      background: #000;
+      border-radius: 999px;
+      z-index: 9999;            /* ✅ 무조건 최상단 */
+      pointer-events: none;     /* 클릭 방해 X */
+      box-shadow: 0 calc(6px * var(--s)) calc(18px * var(--s)) rgba(0,0,0,.45);
+    }
+    /* 선택: 살짝 하이라이트(더 아이폰 느낌) */
+    .notch::after{
+      content:"";
+      position:absolute;
+      top: 18%;
+      left: 10%;
+      right: 10%;
+      height: 22%;
+      border-radius: 999px;
+      background: rgba(255,255,255,.06);
+    }
+
+    .safe{
+      position: absolute;
+      inset: 0;
+      padding:
+        calc(12px * var(--s) + env(safe-area-inset-top))
+        calc(14px * var(--s) + env(safe-area-inset-right))
+        calc(12px * var(--s) + env(safe-area-inset-bottom))
+        calc(14px * var(--s) + env(safe-area-inset-left));
+      box-sizing: border-box;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: calc(12px * var(--s));
+    }
+
+    .statusbar{
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      font-weight: 700;
+      letter-spacing: .2px;
+      font-size: calc(14px * var(--s));
+      opacity: .95;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .sb-right{
+      display: flex;
+      align-items: center;
+      gap: calc(10px * var(--s));
+      font-size: calc(12px * var(--s));
+      color: var(--sub);
+    }
+
+    .pill{
+      height: calc(10px * var(--s));
+      width: calc(18px * var(--s));
+      border-radius: 999px;
+      background: rgba(255,255,255,.25);
+      position: relative;
+      overflow: hidden;
+    }
+    .pill::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      width: 70%;
+      background: rgba(255,255,255,.65);
+      border-radius: 999px;
+    }
+
+    .top-card{
+      padding: calc(12px * var(--s));
+      border-radius: calc(22px * var(--s));
+      background: linear-gradient(180deg, var(--glass), rgba(255,255,255,.06));
+      backdrop-filter: blur(calc(14px * var(--s)));
+      -webkit-backdrop-filter: blur(calc(14px * var(--s)));
+      border: 1px solid rgba(255,255,255,.10);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: calc(12px * var(--s));
+    }
+
+    .top-card .left{
+      display:flex;
+      flex-direction:column;
+      gap: calc(4px * var(--s));
+      min-width: 0;
+    }
+
+    .top-card .title{
+      font-size: calc(14px * var(--s));
+      font-weight: 900;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .top-card .desc{
+      font-size: calc(12px * var(--s));
+      color: var(--sub);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chip{
+      padding: calc(7px * var(--s)) calc(9px * var(--s));
+      border-radius: 999px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.12);
+      font-size: calc(12px * var(--s));
+      color: var(--sub);
+      font-weight: 800;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: calc(12px * var(--s)) calc(10px * var(--s));
+      align-content: start;
+      padding-top: calc(2px * var(--s));
+    }
+
+    .app{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: calc(6px * var(--s));
+      cursor: pointer;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .icon{
+      width: calc(56px * var(--s));
+      height: calc(56px * var(--s));
+      border-radius: var(--iconR);
+      overflow: hidden;
+      box-shadow: 0 calc(10px * var(--s)) calc(26px * var(--s)) rgba(0,0,0,.30);
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      display: grid;
+      place-items: center;
+    }
+
+    .icon img{
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: var(--iconR);
+      object-fit: cover;
+      object-position: center;
+    }
+
+    .label{
+      font-size: calc(10.5px * var(--s));
+      color: rgba(255,255,255,.88);
+      text-shadow: 0 1px calc(10px * var(--s)) rgba(0,0,0,.35);
+      font-weight: 700;
+    }
+
+    .app:active .icon{ transform: scale(.94); }
+
+    .home-indicator{
+      position:absolute;
+      left: 50%;
+      bottom: calc(8px * var(--s) + env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      width: 36%;
+      height: calc(5px * var(--s));
+      border-radius: 999px;
+      background: rgba(255,255,255,.40);
+      pointer-events:none;
+      z-index: 5;
+    }
+
+    /* ✅ 카메라 전용 오버레이 */
+    .overlay{
+      position:absolute;
+      inset:0;
+      background: rgba(0,0,0,.55);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .18s ease;
+      z-index: 1000;
+    }
+
+    /* ✅ 끝까지 올라오게 */
+    .sheet{
+      position:absolute;
+      left: 0; right: 0;
+      bottom: -100%;
+      margin: 0 auto;
+      width: 100%;
+      height: 100%;
+      border-top-left-radius: calc(28px * var(--s));
+      border-top-right-radius: calc(28px * var(--s));
+      background: linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.10));
+      border: 1px solid rgba(255,255,255,.16);
+      backdrop-filter: blur(calc(22px * var(--s)));
+      -webkit-backdrop-filter: blur(calc(22px * var(--s)));
+      transition: bottom .22s ease;
+      overflow: hidden;
+      z-index: 1001;
+    }
+
+    .sheet-header{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      padding: calc(12px * var(--s)) calc(14px * var(--s));
+      border-bottom: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      backdrop-filter: blur(calc(18px * var(--s)));
+      -webkit-backdrop-filter: blur(calc(18px * var(--s)));
+    }
+
+    .sheet-title{
+      font-weight: 900;
+      font-size: calc(14px * var(--s));
+    }
+
+    .btn{
+      appearance:none;
+      border: 0;
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.16);
+      color: var(--text);
+      padding: calc(7px * var(--s)) calc(9px * var(--s));
+      border-radius: calc(12px * var(--s));
+      font-weight: 900;
+      cursor:pointer;
+      font-size: calc(13px * var(--s));
+    }
+
+    .sheet-body{
+      padding: 0;
+      height: calc(100% - (49px * var(--s)));
+      overflow: hidden;
+    }
+
+    .open .overlay{ opacity:1; pointer-events:auto; }
+    .open .sheet{ bottom: 0; }
+
+    /* ✅ 카메라 */
+    .camera-wrap{ position: relative; width: 100%; height: 100%; background:#000; }
+    .camera-video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#000; }
+
+    .camera-hud{
+      position:absolute; left:0; right:0; top:0;
+      padding: calc(10px * var(--s)) calc(12px * var(--s));
+      color: rgba(255,255,255,.9);
+      font-size: calc(12px * var(--s));
+      display:flex; justify-content: space-between; align-items:center;
+      pointer-events:none;
+      background: linear-gradient(180deg, rgba(0,0,0,.55), transparent);
+      font-weight: 900;
+    }
+
+    .camera-actions{
+      position:absolute; left:0; right:0; bottom:0;
+      padding: calc(12px * var(--s)) calc(12px * var(--s)) calc(16px * var(--s) + env(safe-area-inset-bottom));
+      display:flex; justify-content:center;
+      background: linear-gradient(0deg, rgba(0,0,0,.60), transparent);
+    }
+    .shutter{
+      width: calc(58px * var(--s));
+      height: calc(58px * var(--s));
+      border-radius: 999px;
+      background: rgba(255,255,255,.92);
+      border: calc(6px * var(--s)) solid rgba(255,255,255,.25);
+      cursor:pointer;
+    }
+
+    .hint{
+      position:absolute; inset:0;
+      display:grid; place-items:center;
+      padding: calc(18px * var(--s));
+      text-align:center;
+      color: rgba(255,255,255,.9);
+      font-weight: 900;
+      font-size: calc(13px * var(--s));
+    }
+    .hint small{
+      display:block; margin-top: calc(8px * var(--s));
+      color: rgba(255,255,255,.7);
+      font-weight: 800;
+      font-size: calc(11px * var(--s));
+    }
+  </style>
+</head>
+
+<body>
+  <div class="stage">
+    <div class="phone">
+      <div class="screen" id="screen">
+
+        <!-- ✅ 어떤 상황에서도 안 없어지는 상단 검은 줄 -->
+        <div class="notch" aria-hidden="true"></div>
+
+        <div class="safe">
+          <div class="statusbar">
+            <div id="time">9:41</div>
+            <div class="sb-right">
+              <span>5G</span>
+              <span class="pill" aria-label="battery"></span>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="app" data-app="calendar">
+              <div class="icon"><img src="calendar.png" alt="calendar"></div>
+              <div class="label">calendar</div>
+            </div>
+            <div class="app" data-app="maps">
+              <div class="icon"><img src="maps.png" alt="maps"></div>
+              <div class="label">maps</div>
+            </div>
+            <div class="app" data-app="weather">
+              <div class="icon"><img src="weather.png" alt="weather"></div>
+              <div class="label">weather</div>
+            </div>
+            <div class="app" data-app="findmy">
+              <div class="icon"><img src="findmy.png" alt="findmy"></div>
+              <div class="label">findmy</div>
+            </div>
+            <div class="app" data-app="clock">
+              <div class="icon"><img src="clock.png" alt="clock"></div>
+              <div class="label">시계</div>
+            </div>
+            <div class="app" data-app="settings">
+              <div class="icon"><img src="settings.png" alt="settings"></div>
+              <div class="label">settings</div>
+            </div>
+            <div class="app" data-app="App Store">
+              <div class="icon"><img src="appstore.png" alt="App Store"></div>
+              <div class="label">App Store</div>
+            </div>
+            <div class="app" data-app="photos">
+              <div class="icon"><img src="photos.png" alt="photos"></div>
+              <div class="label">photos</div>
+            </div>
+            <div class="app" data-app="camera">
+              <div class="icon"><img src="camera.png" alt="camera"></div>
+              <div class="label">camera</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="home-indicator"></div>
+
+        <div class="overlay" id="overlay" aria-hidden="true">
+          <div class="sheet" role="dialog" aria-modal="true">
+            <div class="sheet-header">
+              <div class="sheet-title" id="sheetTitle">카메라</div>
+              <button class="btn" id="closeBtn">닫기</button>
+            </div>
+            <div class="sheet-body" id="sheetBody"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 상태바 시간
+    const timeEl = document.getElementById('time');
+    const pad2 = (n) => String(n).padStart(2,'0');
+    function updateTime(){
+      const d = new Date();
+      timeEl.textContent = `${d.getHours()}:${pad2(d.getMinutes())}`;
+    }
+    updateTime();
+    setInterval(updateTime, 30000);
+
+    const overlay = document.getElementById('overlay');
+    const screen = document.getElementById('screen');
+    const sheetTitle = document.getElementById('sheetTitle');
+    const sheetBody = document.getElementById('sheetBody');
+    const closeBtn = document.getElementById('closeBtn');
+
+    // 카메라 상태
+    let camStream = null;
+    let camVideoEl = null;
+
+    function stopCamera(){
+      if (camStream){
+        camStream.getTracks().forEach(t => t.stop());
+        camStream = null;
+      }
+      if (camVideoEl){
+        camVideoEl.srcObject = null;
+      }
+    }
+
+    async function startCamera(){
+      stopCamera();
+      const constraints = {
+        audio: false,
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      };
+
+      try{
+        camStream = await navigator.mediaDevices.getUserMedia(constraints);
+        camVideoEl.srcObject = camStream;
+        await camVideoEl.play();
+        return true;
+      }catch(err){
+        try{
+          camStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          camVideoEl.srcObject = camStream;
+          await camVideoEl.play();
+          return true;
+        }catch(e){
+          return false;
+        }
+      }
+    }
+
+    function cameraTemplate(){
+      return `
+        <div class="camera-wrap">
+          <video class="camera-video" id="camVideo" playsinline autoplay muted></video>
+
+          <div class="camera-hud">
+            <div>CAM</div>
+            <div id="camState">권한 요청 중…</div>
+          </div>
+
+          <div class="camera-actions">
+            <button class="shutter" id="shotBtn" aria-label="shutter"></button>
+          </div>
+
+          <div class="hint" id="hint">
+            카메라 권한을 허용하면 화면이 보여!
+            <small>안 되면 HTTPS/Live Server로 실행</small>
+          </div>
+
+          <canvas id="shotCanvas" style="display:none;"></canvas>
+        </div>
+      `;
+    }
+
+    async function openCamera(){
+      sheetTitle.textContent = "카메라";
+      sheetBody.innerHTML = cameraTemplate();
+
+      camVideoEl = document.getElementById('camVideo');
+      const camState = document.getElementById('camState');
+      const hint = document.getElementById('hint');
+      const shotBtn = document.getElementById('shotBtn');
+
+      const canvas = document.getElementById('shotCanvas');
+      const ctx = canvas.getContext('2d');
+
+      const ok = await startCamera();
+      if(ok){
+        camState.textContent = "ON";
+        hint.style.display = "none";
+      }else{
+        camState.textContent = "실패";
+        hint.style.display = "grid";
+        hint.innerHTML = `카메라를 열 수 없어…<small>권한/HTTPS를 확인해줘</small>`;
+      }
+
+      shotBtn.addEventListener('click', ()=>{
+        if(!camVideoEl || camVideoEl.readyState < 2) return;
+        const w = camVideoEl.videoWidth;
+        const h = camVideoEl.videoHeight;
+        if(!w || !h) return;
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(camVideoEl, 0, 0, w, h);
+        camState.textContent = "촬영";
+      });
+
+      screen.classList.add('open');
+      overlay.setAttribute('aria-hidden','false');
+    }
+
+    function closeCamera(){
+      screen.classList.remove('open');
+      overlay.setAttribute('aria-hidden','true');
+      stopCamera();
+      sheetBody.innerHTML = "";
+    }
+
+    // 카메라만 작동
+    document.querySelectorAll('.app').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const name = el.getAttribute('data-app');
+        if (name !== "카메라") return;
+        openCamera();
+      });
+    });
+
+    closeBtn.addEventListener('click', closeCamera);
+    overlay.addEventListener('click', (e)=>{
+      if(e.target === overlay) closeCamera();
+    });
+  </script>
+</body>
+</html>
